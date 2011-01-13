@@ -5,7 +5,7 @@ use utf8;
 use AE;
 use Cocoa::EventLoop;
 
-PikuboGrowler->new()->run();
+PikuboGrowler->new(interval => 60)->run();
 AE::cv()->recv();
 
 {
@@ -65,12 +65,13 @@ AE::cv()->recv();
                     return;
                 };
 
+                my $i = 0;
                 for my $row (@$rows) {
                     my $url= $row->{url} // die;
                     debugf("process %s", $url);
                     my $title = $row->{user_name} // die "fucking user name";
                     my $description = $row->{description} // die "fucking user name";
-                    $self->deduper->check($url) and do {
+                    if ($self->deduper->check($url)) {
                         infof("growl %s", $url);
                         (my $photo_url = $url) =~ s!/photo/!/p/p/!;
                         growl_notify(
@@ -80,7 +81,10 @@ AE::cv()->recv();
                             icon        => $photo_url,
                             on_click    => sub { system 'open', $url }
                         );
-                    };
+                    } else {
+                        infof("duped: %s", $url);
+                    }
+                    last if $i++ > 10;
                 }
             } else {
                 warnf("code is not a 200: %s", ddf($headers));
@@ -108,3 +112,4 @@ AE::cv()->recv();
         return 1;
     }
 }
+
