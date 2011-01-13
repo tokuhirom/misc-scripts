@@ -104,6 +104,7 @@ AE::cv()->recv();
             }
         }
         push @{$self->{data}}, $k;
+        shift @{$self->{data}} if @{$self->{data}} > $self->{limit};
         return 1;
     }
 }
