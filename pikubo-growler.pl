@@ -32,7 +32,7 @@ AE::cv()->recv();
         );
 
         bless {
-            url   => 'http://pikubo.jp/api/v1/public_feed.json',
+            url   => 'http://pikubo.jp/api/v1/feed/public.json',
             interval => 60,
             furl  => Furl->new(),
             deduper => PikuboGrowler::Deduper->new(limit => 50),
@@ -67,7 +67,7 @@ AE::cv()->recv();
 
                 my $i = 0;
                 for my $row (@$rows) {
-                    my $url= $row->{url} // die;
+                    my $url= $row->{photo_page_url} // die;
                     debugf("process %s", $url);
                     my $title = $row->{user_name} // die "fucking user name";
                     my $description = $row->{description} // die "fucking user name";
@@ -79,7 +79,10 @@ AE::cv()->recv();
                             title       => $title,
                             description => $description,
                             icon        => $photo_url,
-                            on_click    => sub { system 'open', $url }
+                            onClick    => sub {
+                                infof("open dialog for %s", $url);
+                                system('open', $url) == 0 or warnf("Cannot open %s: %s", $url, $!);
+                            }
                         );
                     } else {
                         infof("duped: %s", $url);
@@ -88,6 +91,11 @@ AE::cv()->recv();
                 }
             } else {
                 warnf("code is not a 200: %s", ddf($headers));
+                if ($headers->{Reason} eq 'Device not configured') {
+                    critf("hmm.. I'll die");
+                    sleep 1;
+                    exit 2;
+                }
             }
         };
     }
