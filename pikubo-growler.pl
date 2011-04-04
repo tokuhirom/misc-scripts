@@ -66,7 +66,7 @@ AE::cv()->recv();
                 };
 
                 my $i = 0;
-                for my $row (@$rows) {
+                for my $row (@{$rows->{photos}}) {
                     my $url= $row->{photo_page_url} // die;
                     debugf("process %s", $url);
                     my $title = $row->{user_name} // die "fucking user name";
